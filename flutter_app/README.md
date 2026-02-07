@@ -17,4 +17,4 @@ flutter run
 - `/p/mospilan` 商品詳細（概要/レビュー/ログ/Q&A）
 - `/communities` コミュニティ一覧
 
-データは `lib/data/demo_data.dart` の固定データです。
+データは `lib/main.dart` 内の固定データです（1ファイル完結）。
