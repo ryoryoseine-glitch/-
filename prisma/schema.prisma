@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PostType {
+  NOTE
+  REVIEW
+  LOG
+}
+
+enum CommunityVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum CommunityRole {
+  OWNER
+  MOD
+  MEMBER
+}
+
+model User {
+  /// Staff user id
+  id       String  @id
+  handle   String  @unique
+  name     String?
+  bio      String?
+  imageUrl String?
+  location String?
+  website  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts                Post[]
+  likes                Like[]
+  following            Follow[]          @relation("following")
+  followers            Follow[]          @relation("followers")
+  communityMemberships CommunityMember[]
+}
+
+model Category {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+
+  products Product[]
+}
+
+model Manufacturer {
+  id   String @id @default(cuid())
+  slug String @unique
+  name String
+
+  products Product[]
+}
+
+model ActiveIngredient {
+  id   String @id @default(cuid())
+  name String @unique
+
+  productIngredients ProductIngredient[]
+}
+
+model Crop {
+  id   String @id @default(cuid())
+  name String @unique
+
+  productCrops ProductCrop[]
+}
+
+model TargetPestDisease {
+  id   String @id @default(cuid())
+  name String @unique
+
+  productTargets ProductTarget[]
+}
+
+model Product {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  description String?
+  imageUrl    String?
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  manufacturerId String?
+  manufacturer   Manufacturer? @relation(fields: [manufacturerId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Cached aggregates
+  avgRating   Float @default(0)
+  reviewCount Int   @default(0)
+
+  posts     Post[]
+  questions Question[]
+
+  productIngredients ProductIngredient[]
+  productCrops       ProductCrop[]
+  productTargets     ProductTarget[]
+}
+
+model ProductIngredient {
+  id           String @id @default(cuid())
+  productId    String
+  ingredientId String
+
+  product    Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredient ActiveIngredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, ingredientId])
+}
+
+model ProductCrop {
+  id        String @id @default(cuid())
+  productId String
+  cropId    String
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  crop    Crop    @relation(fields: [cropId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, cropId])
+}
+
+model ProductTarget {
+  id        String @id @default(cuid())
+  productId String
+  targetId  String
+
+  product Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  target  TargetPestDisease @relation(fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, targetId])
+}
+
+model Post {
+  id   String  @id @default(cuid())
+  type PostType @default(NOTE)
+
+  authorId String
+  author   User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Reply thread (X style)
+  replyToPostId String?
+  replyTo       Post?  @relation("PostReplies", fields: [replyToPostId], references: [id], onDelete: Cascade)
+  replies       Post[] @relation("PostReplies")
+
+  // Product attachment (review/log)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  // Review fields (type=REVIEW)
+  ratingOverall Int?
+  ratingEffect  Int?
+  ratingCost    Int?
+  ratingEase    Int?
+  ratingSafety  Int?
+
+  // Log fields (type=LOG)
+  usedAt       DateTime?
+  cropText     String?
+  targetText   String?
+  dilutionText String?
+  amountText   String?
+  note         String?
+
+  // Community attachment (optional)
+  communityId String?
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
+
+  likeCount  Int @default(0)
+  replyCount Int @default(0)
+
+  likes Like[]
+
+  @@index([createdAt])
+  @@index([authorId, createdAt])
+  @@index([productId, createdAt])
+  @@index([communityId, createdAt])
+  @@index([replyToPostId, createdAt])
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([postId, createdAt])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followingId, createdAt])
+}
+
+model Question {
+  id        String   @id @default(cuid())
+  productId String
+  authorId  String
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  answers Answer[]
+
+  @@index([productId, createdAt])
+}
+
+model Answer {
+  id         String   @id @default(cuid())
+  questionId String
+  authorId   String
+  body       String
+  createdAt  DateTime @default(now())
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([questionId, createdAt])
+}
+
+model Community {
+  id          String @id @default(cuid())
+  slug        String @unique
+  name        String
+  description String?
+  imageUrl    String?
+  visibility  CommunityVisibility @default(PUBLIC)
+
+  ownerId String
+  owner   User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  pinnedPostId String?
+  pinnedPost   Post? @relation(fields: [pinnedPostId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members CommunityMember[]
+  posts   Post[]
+
+  @@index([visibility, createdAt])
+}
+
+model CommunityMember {
+  id          String   @id @default(cuid())
+  communityId String
+  userId      String
+  role        CommunityRole @default(MEMBER)
+  createdAt   DateTime      @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([communityId, createdAt])
+}
