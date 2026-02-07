@@ -1,6 +1,17 @@
 # Agro SNS (spec-first)
 
-This repository captures the initial data model for an agriculture-focused review & community SNS combining timeline posts with product-linked reviews/logs. The Prisma schema implements the unified Post model and product/community relations described in the requirements.
+このリポジトリは、農業資材・農薬レビュー × SNS プラットフォームのMVP実装を提供します。
+Prisma の統合モデルを土台に、Next.js App Router で X 風のタイムライン体験と商品レビュー体験を統合しています。
 
 ## Structure
-- `prisma/schema.prisma`: Core database schema for posts, products, reviews, logs, Q&A, and communities.
+- `prisma/schema.prisma`: コアとなるデータモデル
+- `app/`: Next.js App Router の画面実装
+- `components/`: UIコンポーネント
+- `lib/`: Prisma / Clerk 連携とバリデーション
+
+## Setup
+```
+cp .env.example .env
+npm install
+npm run dev
+```
