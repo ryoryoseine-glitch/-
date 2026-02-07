@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormState } from "react-dom";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { createPost } from "@/app/actions/posts";
 
@@ -16,9 +16,37 @@ type ComposerState =
     }
   | undefined;
 
-const Composer = () => {
+type ComposerProduct = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+const Composer = ({
+  products = [],
+  defaultProductId
+}: {
+  products?: ComposerProduct[];
+  defaultProductId?: string;
+}) => {
   const [type, setType] = useState<"NOTE" | "REVIEW" | "LOG">("NOTE");
+  const [selectedProductId, setSelectedProductId] = useState<string>(defaultProductId ?? "");
   const [state, formAction] = useFormState(createPost, undefined as ComposerState);
+
+  const hasProducts = products.length > 0;
+  const options = useMemo(() => products, [products]);
+
+  useEffect(() => {
+    if (defaultProductId) {
+      setSelectedProductId(defaultProductId);
+    }
+  }, [defaultProductId]);
+
+  useEffect(() => {
+    if ((type === "REVIEW" || type === "LOG") && hasProducts && !selectedProductId) {
+      setSelectedProductId(options[0].id);
+    }
+  }, [type, hasProducts, options, selectedProductId]);
 
   return (
     <form action={formAction} className="space-y-4 border-b border-ink-200 px-4 py-4">
@@ -45,11 +73,31 @@ const Composer = () => {
       />
 
       {(type === "REVIEW" || type === "LOG") && (
-        <input
-          name="productId"
-          placeholder="productId"
-          className="w-full rounded-2xl border border-ink-200 px-3 py-2 text-sm"
-        />
+        <div className="space-y-2 text-sm">
+          {hasProducts ? (
+            <select
+              name="productId"
+              value={selectedProductId}
+              onChange={(event) => setSelectedProductId(event.target.value)}
+              className="w-full rounded-2xl border border-ink-200 px-3 py-2"
+            >
+              {options.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              name="productId"
+              placeholder="productId"
+              className="w-full rounded-2xl border border-ink-200 px-3 py-2"
+            />
+          )}
+          <p className="text-xs text-ink-500">
+            商品ページからレビュー/ログを作成する場合は該当商品を選択してください。
+          </p>
+        </div>
       )}
 
       {type === "REVIEW" && (

@@ -1,3 +1,4 @@
+import { DEMO_MODE, listDemoPostsWithRelations } from "./demo-data";
 import { prisma } from "./prisma";
 
 const PAGE_SIZE = 20;
@@ -8,6 +9,13 @@ export type PostCursor = {
 };
 
 export const getForYouPosts = async (cursor?: PostCursor) => {
+  if (DEMO_MODE) {
+    const items = listDemoPostsWithRelations({ replyToPostId: null });
+    return {
+      items,
+      nextCursor: null
+    };
+  }
   const posts = await prisma.post.findMany({
     where: { replyToPostId: null },
     take: PAGE_SIZE + 1,
@@ -44,6 +52,13 @@ export const getProductPosts = async ({
   type?: "REVIEW" | "LOG";
   cursor?: PostCursor;
 }) => {
+  if (DEMO_MODE) {
+    const items = listDemoPostsWithRelations({ productId, type });
+    return {
+      items,
+      nextCursor: null
+    };
+  }
   const posts = await prisma.post.findMany({
     where: {
       productId,
@@ -75,6 +90,13 @@ export const getProductPosts = async ({
 };
 
 export const getCommunityPosts = async (communityId: string, cursor?: PostCursor) => {
+  if (DEMO_MODE) {
+    const items = listDemoPostsWithRelations({ communityId });
+    return {
+      items,
+      nextCursor: null
+    };
+  }
   const posts = await prisma.post.findMany({
     where: { communityId },
     take: PAGE_SIZE + 1,

@@ -1,11 +1,26 @@
+import {
+  DEMO_MODE,
+  findDemoUserByHandle,
+  listDemoPostsWithRelations
+} from "@/lib/demo-data";
 import { prisma } from "@/lib/prisma";
 import PostThread from "@/components/posts/PostThread";
 
 const ProfileHandlePage = async ({ params }: { params: { handle: string } }) => {
-  const user = await prisma.user.findUnique({
-    where: { handle: params.handle },
-    include: { posts: { include: { product: true } } }
-  });
+  const user = DEMO_MODE
+    ? (() => {
+        const demoUser = findDemoUserByHandle(params.handle);
+        if (!demoUser) return null;
+        const posts = listDemoPostsWithRelations({ authorId: demoUser.id });
+        return {
+          ...demoUser,
+          posts
+        };
+      })()
+    : await prisma.user.findUnique({
+        where: { handle: params.handle },
+        include: { posts: { include: { product: true } } }
+      });
 
   if (!user) {
     return (

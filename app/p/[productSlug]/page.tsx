@@ -5,14 +5,30 @@ import ProductTabs from "@/components/products/ProductTabs";
 import RatingSummary from "@/components/products/RatingSummary";
 import PostThread from "@/components/posts/PostThread";
 import QuestionList from "@/components/community/QuestionList";
+import {
+  DEMO_MODE,
+  findDemoCategoryById,
+  findDemoProductBySlug,
+  listDemoQuestionsByProductId
+} from "@/lib/demo-data";
 import { prisma } from "@/lib/prisma";
 import { getProductPosts } from "@/lib/posts";
 
 const ProductDetailPage = async ({ params }: { params: { productSlug: string } }) => {
-  const product = await prisma.product.findUnique({
-    where: { slug: params.productSlug },
-    include: { category: true }
-  });
+  const product = DEMO_MODE
+    ? (() => {
+        const demoProduct = findDemoProductBySlug(params.productSlug);
+        if (!demoProduct) return null;
+        const category = findDemoCategoryById(demoProduct.categoryId);
+        return {
+          ...demoProduct,
+          category
+        };
+      })()
+    : await prisma.product.findUnique({
+        where: { slug: params.productSlug },
+        include: { category: true }
+      });
 
   if (!product) {
     return (
@@ -25,7 +41,12 @@ const ProductDetailPage = async ({ params }: { params: { productSlug: string } }
   const [reviews, logs, questions] = await Promise.all([
     getProductPosts({ productId: product.id, type: "REVIEW" }),
     getProductPosts({ productId: product.id, type: "LOG" }),
-    prisma.question.findMany({ where: { productId: product.id }, orderBy: { createdAt: "desc" } })
+    DEMO_MODE
+      ? Promise.resolve(listDemoQuestionsByProductId(product.id))
+      : prisma.question.findMany({
+          where: { productId: product.id },
+          orderBy: { createdAt: "desc" }
+        })
   ]);
 
   const reviewPosts = reviews.items.map((post) => ({
@@ -69,7 +90,9 @@ const ProductDetailPage = async ({ params }: { params: { productSlug: string } }
         <div className="space-y-6">
           <section id="overview">
             <h3 className="text-sm font-semibold">概要</h3>
-            <p className="mt-2 text-sm text-ink-600">カテゴリ: {product.category.name}</p>
+            <p className="mt-2 text-sm text-ink-600">
+              カテゴリ: {product.category?.name ?? "未分類"}
+            </p>
           </section>
           <section id="reviews">
             <h3 className="text-sm font-semibold">レビュー</h3>

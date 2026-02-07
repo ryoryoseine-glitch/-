@@ -1,11 +1,14 @@
 import ProductCard from "@/components/products/ProductCard";
+import { DEMO_MODE, listDemoProducts } from "@/lib/demo-data";
 import { prisma } from "@/lib/prisma";
 
 const RankingPage = async () => {
-  const products = await prisma.product.findMany({
-    orderBy: [{ avgRating: "desc" }, { reviewCount: "desc" }],
-    take: 10
-  });
+  const products = DEMO_MODE
+    ? listDemoProducts().sort((a, b) => b.avgRating - a.avgRating).slice(0, 10)
+    : await prisma.product.findMany({
+        orderBy: [{ avgRating: "desc" }, { reviewCount: "desc" }],
+        take: 10
+      });
 
   return (
     <div className="space-y-4">

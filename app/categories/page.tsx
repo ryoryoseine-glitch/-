@@ -1,11 +1,14 @@
 import Link from "next/link";
 
+import { DEMO_MODE, listDemoCategories } from "@/lib/demo-data";
 import { prisma } from "@/lib/prisma";
 
 const CategoriesPage = async () => {
-  const categories = await prisma.category.findMany({
-    orderBy: { name: "asc" }
-  });
+  const categories = DEMO_MODE
+    ? listDemoCategories()
+    : await prisma.category.findMany({
+        orderBy: { name: "asc" }
+      });
 
   return (
     <div className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm">

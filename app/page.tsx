@@ -1,8 +1,16 @@
 import Composer from "@/components/posts/Composer";
 import PostThread from "@/components/posts/PostThread";
+import { DEMO_MODE, getDemoProductOptions } from "@/lib/demo-data";
 import { getForYouPosts } from "@/lib/posts";
+import { prisma } from "@/lib/prisma";
 
 const HomePage = async () => {
+  const productOptions = DEMO_MODE
+    ? getDemoProductOptions()
+    : await prisma.product.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, slug: true }
+      });
   const { items } = await getForYouPosts();
   const posts = items.map((post) => ({
     id: post.id,
@@ -22,7 +30,7 @@ const HomePage = async () => {
 
   return (
     <div className="rounded-3xl border border-ink-200 bg-white shadow-sm">
-      <Composer />
+      <Composer products={productOptions} />
       <PostThread posts={posts} />
     </div>
   );

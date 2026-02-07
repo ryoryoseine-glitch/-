@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { getCurrentUser } from "@/lib/auth";
+import { DEMO_MODE, createDemoPost } from "@/lib/demo-data";
 import { prisma } from "@/lib/prisma";
 import { postSchema } from "@/lib/validation";
 
@@ -52,27 +53,31 @@ export const createPost = async (_prevState: unknown, formData: FormData) => {
     const data = parseForm(formData);
     const usedAtDate = data.usedAt ? new Date(data.usedAt) : null;
 
-    const post = await prisma.post.create({
-      data: {
-        type: data.type,
-        content: data.content ?? "",
-        productId: data.productId ?? null,
-        ratingOverall: data.ratingOverall,
-        ratingEffect: data.ratingEffect,
-        ratingCost: data.ratingCost,
-        ratingEase: data.ratingEase,
-        ratingSafety: data.ratingSafety,
-        usedAt: usedAtDate,
-        cropText: data.cropText,
-        targetText: data.targetText,
-        dilutionText: data.dilutionText,
-        amountText: data.amountText,
-        note: data.note,
-        replyToPostId: data.replyToPostId,
-        communityId: data.communityId,
-        authorId: user.id
-      }
-    });
+    const payload = {
+      type: data.type,
+      content: data.content ?? "",
+      productId: data.productId ?? null,
+      ratingOverall: data.ratingOverall,
+      ratingEffect: data.ratingEffect,
+      ratingCost: data.ratingCost,
+      ratingEase: data.ratingEase,
+      ratingSafety: data.ratingSafety,
+      usedAt: usedAtDate,
+      cropText: data.cropText,
+      targetText: data.targetText,
+      dilutionText: data.dilutionText,
+      amountText: data.amountText,
+      note: data.note,
+      replyToPostId: data.replyToPostId,
+      communityId: data.communityId,
+      authorId: user.id
+    };
+
+    const post = DEMO_MODE
+      ? createDemoPost(payload)
+      : await prisma.post.create({
+          data: payload
+        });
 
     return { ok: true, postId: post.id };
   } catch (error) {
@@ -94,14 +99,18 @@ export const createReply = async (_prevState: unknown, formData: FormData) => {
       throw new Error("replyToPostId is required");
     }
 
-    const post = await prisma.post.create({
-      data: {
-        type: data.type,
-        content: data.content ?? "",
-        replyToPostId: String(replyToPostId),
-        authorId: user.id
-      }
-    });
+    const payload = {
+      type: data.type,
+      content: data.content ?? "",
+      replyToPostId: String(replyToPostId),
+      authorId: user.id
+    };
+
+    const post = DEMO_MODE
+      ? createDemoPost(payload)
+      : await prisma.post.create({
+          data: payload
+        });
 
     return { ok: true, postId: post.id };
   } catch (error) {

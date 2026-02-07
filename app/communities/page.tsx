@@ -1,11 +1,14 @@
 import Link from "next/link";
 
+import { DEMO_MODE, listDemoCommunities } from "@/lib/demo-data";
 import { prisma } from "@/lib/prisma";
 
 const CommunitiesPage = async () => {
-  const communities = await prisma.community.findMany({
-    orderBy: { createdAt: "desc" }
-  });
+  const communities = DEMO_MODE
+    ? listDemoCommunities()
+    : await prisma.community.findMany({
+        orderBy: { createdAt: "desc" }
+      });
 
   return (
     <div className="rounded-3xl border border-ink-200 bg-white p-6 shadow-sm">

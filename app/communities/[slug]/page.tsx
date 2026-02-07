@@ -1,12 +1,15 @@
 import CommunityFeed from "@/components/community/CommunityFeed";
 import CommunityHeader from "@/components/community/CommunityHeader";
+import { DEMO_MODE, findDemoCommunityBySlug } from "@/lib/demo-data";
 import { prisma } from "@/lib/prisma";
 import { getCommunityPosts } from "@/lib/posts";
 
 const CommunityDetailPage = async ({ params }: { params: { slug: string } }) => {
-  const community = await prisma.community.findUnique({
-    where: { slug: params.slug }
-  });
+  const community = DEMO_MODE
+    ? findDemoCommunityBySlug(params.slug)
+    : await prisma.community.findUnique({
+        where: { slug: params.slug }
+      });
 
   if (!community) {
     return (

@@ -1,15 +1,22 @@
+import {
+  DEMO_MODE,
+  findDemoPostWithRelations,
+  listDemoRepliesWithRelations
+} from "@/lib/demo-data";
 import { prisma } from "@/lib/prisma";
 import PostThread from "@/components/posts/PostThread";
 
 const PostDetailPage = async ({ params }: { params: { id: string } }) => {
-  const post = await prisma.post.findUnique({
-    where: { id: params.id },
-    include: {
-      author: true,
-      replies: { include: { author: true, product: true } },
-      product: true
-    }
-  });
+  const post = DEMO_MODE
+    ? findDemoPostWithRelations(params.id)
+    : await prisma.post.findUnique({
+        where: { id: params.id },
+        include: {
+          author: true,
+          replies: { include: { author: true, product: true } },
+          product: true
+        }
+      });
 
   if (!post) {
     return (
@@ -19,21 +26,28 @@ const PostDetailPage = async ({ params }: { params: { id: string } }) => {
     );
   }
 
+  const replies = DEMO_MODE ? listDemoRepliesWithRelations(post.id) : post.replies;
   const thread = [
     {
       id: post.id,
       type: post.type,
-      author: { name: post.author.name, handle: post.author.handle },
+      author: {
+        name: post.author?.name ?? "Unknown",
+        handle: post.author?.handle ?? "unknown"
+      },
       content: post.content,
       createdAt: post.createdAt,
       likeCount: post.likeCount,
       replyCount: post.replyCount,
       product: post.product ? { name: post.product.name, slug: post.product.slug } : null
     },
-    ...post.replies.map((reply) => ({
+    ...replies.map((reply) => ({
       id: reply.id,
       type: reply.type,
-      author: { name: reply.author.name, handle: reply.author.handle },
+      author: {
+        name: reply.author?.name ?? "Unknown",
+        handle: reply.author?.handle ?? "unknown"
+      },
       content: reply.content,
       createdAt: reply.createdAt,
       likeCount: reply.likeCount,

@@ -1,11 +1,25 @@
+import {
+  DEMO_MODE,
+  findDemoCategoryBySlug,
+  listDemoProductsByCategoryId
+} from "@/lib/demo-data";
 import { prisma } from "@/lib/prisma";
 import ProductCard from "@/components/products/ProductCard";
 
 const CategoryProductsPage = async ({ params }: { params: { categorySlug: string } }) => {
-  const category = await prisma.category.findUnique({
-    where: { slug: params.categorySlug },
-    include: { products: true }
-  });
+  const category = DEMO_MODE
+    ? (() => {
+        const demoCategory = findDemoCategoryBySlug(params.categorySlug);
+        if (!demoCategory) return null;
+        return {
+          ...demoCategory,
+          products: listDemoProductsByCategoryId(demoCategory.id)
+        };
+      })()
+    : await prisma.category.findUnique({
+        where: { slug: params.categorySlug },
+        include: { products: true }
+      });
 
   if (!category) {
     return (
