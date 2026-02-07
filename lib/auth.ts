@@ -1,11 +1,20 @@
-import { auth, clerkClient } from "@clerk/nextjs/server";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-
 import { prisma } from "./prisma";
 import { isReservedHandle } from "./reserved-handles";
 
-export const requireClerkUserId = () => {
+const DEMO_MODE = process.env.DEMO_MODE === "true";
+
+const loadClerk = async () => {
+  const clerk = await import("@clerk/nextjs/server");
+  const { headers } = await import("next/headers");
+  const { redirect } = await import("next/navigation");
+  return { ...clerk, headers, redirect };
+};
+
+export const requireClerkUserId = async () => {
+  if (DEMO_MODE) {
+    return "demo-user";
+  }
+  const { auth, redirect } = await loadClerk();
   const { userId } = auth();
   if (!userId) {
     redirect("/sign-in");
@@ -14,6 +23,22 @@ export const requireClerkUserId = () => {
 };
 
 export const syncClerkUser = async (userId: string) => {
+  if (DEMO_MODE) {
+    return {
+      user: {
+        id: "demo-user",
+        handle: "demo",
+        name: "Demo User",
+        imageUrl: null,
+        bio: null,
+        location: null,
+        website: null
+      },
+      email: null
+    };
+  }
+
+  const { clerkClient, headers, redirect } = await loadClerk();
   const user = await clerkClient.users.getUser(userId);
   const primaryEmail = user.emailAddresses.find(
     (email) => email.id === user.primaryEmailAddressId
@@ -51,7 +76,16 @@ export const syncClerkUser = async (userId: string) => {
 };
 
 export const getCurrentUser = async () => {
-  const userId = requireClerkUserId();
+  if (DEMO_MODE) {
+    return {
+      id: "demo-user",
+      handle: "demo",
+      name: "Demo User",
+      imageUrl: null
+    };
+  }
+
+  const userId = await requireClerkUserId();
   const { user } = await syncClerkUser(userId);
   return user;
 };

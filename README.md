@@ -15,3 +15,12 @@ cp .env.example .env
 npm install
 npm run dev
 ```
+
+## Demo mode
+開発用に `DEMO_MODE=true` を指定すると Clerk を無効化し、固定デモユーザーで動作します。
+初回は Prisma の seed を実行して最低限のデータを投入してください。
+
+```
+npx prisma migrate dev
+npx prisma db seed
+```
