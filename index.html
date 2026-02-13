@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ビデオシューティングアプリ</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>ビデオシューティングアプリ</h1>
+      <p class="subtitle">カメラを起動して録画し、保存できます。</p>
+
+      <section class="preview">
+        <video id="preview" autoplay playsinline muted></video>
+      </section>
+
+      <section class="controls">
+        <button id="startCameraBtn">カメラ開始</button>
+        <button id="startRecordBtn" disabled>録画開始</button>
+        <button id="stopRecordBtn" disabled>録画停止</button>
+        <button id="downloadBtn" disabled>動画を保存</button>
+      </section>
+
+      <p id="status" class="status">準備完了</p>
+      <video id="playback" controls></video>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
